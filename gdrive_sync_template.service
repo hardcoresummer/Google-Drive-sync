@@ -1,0 +1,19 @@
+[Unit]
+Description=A test service written in Python
+After=default.target
+
+[Service]
+# Note: setting PYTHONUNBUFFERED is necessary to see the output of this service in the journal
+# See https://docs.python.org/2/using/cmdline.html#envvar-PYTHONUNBUFFERED
+Environment=PYTHONUNBUFFERED=true
+KillSignal=SIGTERM
+User=thang
+Type=notify
+
+#fill the data in the <>
+WorkingDirectory=<this_project_location> 
+ExecStart=/usr/bin/python3 start_sync_task.py <remote_rclone_config_name>  <remote_sync_path> <local_sync_path> 
+
+
+[Install]
+WantedBy=default.target
