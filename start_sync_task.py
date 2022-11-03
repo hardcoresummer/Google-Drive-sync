@@ -1,3 +1,4 @@
+import os
 import signal
 import subprocess
 import time
@@ -67,12 +68,15 @@ class FolderSyncHandler(FileSystemEventHandler):
         
         
         #https://forum.rclone.org/t/how-to-speed-up-google-drive-sync/8444
-        output = subprocess.run(["rclone", "bisync" ,f"{self.remote_rclone_config}:{self.remote_sync_path}",f"{self.local_sync_path}","--transfers=40","--checkers=40",
-        "--tpslimit=300","--tpslimit-burst=100","--max-backlog=200000","--fast-list"])
-        # turns out that add --drive-skip-shortcuts or sth like that modify the backend, so instead of shared config, we will have another shared{...} config
-        # link here https://forum.rclone.org/t/detected-overridden-config/23371/3
-        notifier.notify("STATUS=idling")
-        self.logger.info(f"synchronization done! with output: {output}")
+        rclone_task = subprocess.Popen(["rclone", "bisync" ,f"{self.remote_rclone_config}:{self.remote_sync_path}",f"{self.local_sync_path}","--transfers=40","--checkers=40",
+        "--tpslimit=300","--tpslimit-burst=100","--max-backlog=200000","--fast-list"],preexec_fn=os.setpgrp)
+        return_code = rclone_task.wait()
+        if return_code==2:
+            notifier.notify("STATUS=critical failure")
+            # self.logger.info(f"rclone failed, run with --resync again")
+        elif return_code==0:
+            notifier.notify("STATUS=success")
+            self.logger.info(f"Synchronization successful")
 
 
 
